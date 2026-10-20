@@ -5,6 +5,10 @@ import { drawTemple, headYaw, nearTemple, unprojectWidth, type Quad } from './te
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { frames, type Frame } from './catalog';
 
+const parameters=new URLSearchParams(location.search);
+const embedded=parameters.get('embed')==='1';
+document.body.classList.toggle('embedded',embedded);
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header><a class="brand" href="./">mirada<span>®</span></a><span class="header-note">Una nueva forma de encontrar tus anteojos</span><span class="edition">ESTUDIO ÓPTICO / 01</span></header>
 <main><div class="intro"><div><p class="eyebrow">TU PRÓXIMA MIRADA</p><h1>Encontrá tu forma<br>de ver el mundo.</h1></div><p>Probá una nueva perspectiva.<br>Elegí una montura y mirá cómo te queda,<br>desde donde estés.</p></div>
@@ -42,6 +46,8 @@ function updateGlass() {
   glass=lensMaskCanvas && crop ? glassLayer(lensMaskCanvas,crop,lensSelect.value) : undefined;
   $('#lens-help').textContent=lensMaskCanvas ? 'Simulación visual de color y reflejos. No representa graduación ni protección UV.' : 'No se pudieron delimitar ambas aberturas; se muestra la montura sin efecto.';
 }
+const requestedLens=parameters.get('lens');
+if(requestedLens && lensTypes.some(type=>type.id===requestedLens)) lensSelect.value=requestedLens;
 lensSelect.onchange=updateGlass;
 
 // Exclude transparent padding from the physical width/height without changing the PNG.
@@ -111,7 +117,7 @@ for (const frame of frames) {
   button.onclick = () => void select(frame);
   $('#catalog').append(button);
 }
-void select(frames.find(frame => frame.id === new URLSearchParams(location.search).get('frame')) || frames[0]);
+void select(frames.find(frame => frame.id === parameters.get('frame')) || frames[0]);
 
 function stop() {
   generation++; cancelAnimationFrame(animation);
@@ -219,6 +225,16 @@ function loop() {
 $('#stop').onclick = () => { stop(); status('Cámara apagada. Podés volver a activarla cuando quieras.'); };
 document.addEventListener('visibilitychange', () => { if (document.hidden) { stop(); status('Cámara apagada al salir de la pestaña.'); } });
 window.addEventListener('pagehide', () => { stop(); detector?.close(); });
+const parentOrigin=parameters.get('parentOrigin') || location.origin;
+window.addEventListener('message',event=>{
+  if(embedded && event.source===window.parent && event.origin===parentOrigin && event.data?.type==='tryon:stop') stop();
+});
+document.addEventListener('keydown',event=>{
+  if(embedded && event.key==='Escape') {
+    stop();
+    try {window.parent.postMessage({type:'tryon:close'},parentOrigin);} catch { /* Invalid integration origin cannot receive messages. */ }
+  }
+});
 capture.onclick = () => {
   if (!stream || capture.disabled) return;
   const snapshot = document.createElement('canvas'); snapshot.width = canvas.width; snapshot.height = canvas.height;
