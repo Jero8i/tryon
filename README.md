@@ -61,3 +61,7 @@ Subir el contenido de esta carpeta `virtual-tryon` a la raíz del repositorio, i
 Se configuraron `base: ./`, imágenes y enlaces relativos para conservar el prefijo del repositorio. Para probar un modelo: `https://USUARIO.github.io/REPOSITORIO/?frame=nika-brown`. Pages ofrece HTTPS; el acceso a cámara requiere además el permiso del usuario. Modelo facial, WASM y fuentes necesitan conexión a internet.
 
 Referencia: https://vite.dev/guide/static-deploy.html#github-pages
+
+## Catálogo y modal
+
+La raíz abre el catálogo de demostración. Cada producto pasa `frame` y `lens` al modal que carga `tryon.html?embed=1`. El probador independiente también está disponible en `tryon.html`. Los enlaces antiguos `/?frame=...` abren el producto correspondiente en el modal. Para integrar el iframe en la tienda real, ver `INTEGRACION.md`. Las 17 pruebas y la compilación verifican cálculos, máscaras y parámetros de URL; la interacción de cámara dentro del modal requiere validación manual en navegador.
