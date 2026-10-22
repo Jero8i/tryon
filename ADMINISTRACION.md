@@ -42,7 +42,7 @@ Para que la encargada publique directamente y el botón de la tienda encuentre e
    El workflow ya las pasa al build. Estas variables son públicas por diseño. **Nunca usar una clave secret o service_role**, que evitaría los permisos de las tablas. En desarrollo copiar `.env.example` a `.env.local` y completar esos dos valores; los `.env` están excluidos de Git.
 
 5. Subir los archivos completos y ejecutar el workflow de Pages. Abrir `admin.html` e ingresar con la cuenta autorizada. La configuración solo requiere un build inicial; después los modelos publicados se leen online sin recompilar.
-6. Con el backend configurado, el catálogo online es la fuente pública completa. Para conservar Verdant, Nika y Bless, copiarlos desde **Copiar un modelo de prueba**, revisar y publicarlos antes de apuntar botones reales al catálogo nuevo. No se mezclan automáticamente modelos retirados con el catálogo estático.
+6. El catálogo público se obtiene exclusivamente de Supabase y no incluye modelos de prueba estáticos. Cargar y publicar los modelos desde este panel. La vista previa de borradores sigue siendo privada.
 
 ## Permisos, fotos y funcionamiento
 

@@ -1,6 +1,6 @@
 # Mirada · Probador virtual
 
-TypeScript + Vite + MediaPipe Face Landmarker + Canvas. Catálogo actual: Verdant, Nika Brown y Bless carey & black. Los ejemplos Alma, Oliva y Aire ya no se ofrecen. Los SVG históricos se conservan en disco.
+TypeScript + Vite + MediaPipe Face Landmarker + Canvas. El catálogo público se obtiene únicamente de los modelos publicados en Supabase. Los ejemplos Alma, Oliva y Aire ya no se ofrecen. Los SVG históricos se conservan en disco.
 
 ## Ejecutar y verificar
 
@@ -69,3 +69,7 @@ La raíz abre el catálogo de demostración. Cada producto pasa `frame` y `lens`
 ## Panel de carga del catálogo
 
 Abrir `admin.html`. Permite cargar nombre, ID de tienda, fotos, medidas, preparar PNG transparentes, marcar puente/patillas y probar un borrador con cámara. Incluye guardado local, exportación/importación y una conexión preparada de Supabase para autenticación y catálogo compartido. Sin configurar el backend solo guarda borradores en ese navegador; no publica para los clientes. Ver `ADMINISTRACION.md` para activar la publicación online una sola vez y luego cargar modelos sin editar código. El build y el workflow incluyen la tercera página y las dos variables públicas de conexión.
+
+## Catálogo exclusivamente online
+
+No hay modelos estáticos de respaldo ni copias de demostración en el admin. Tienda y probador consultan únicamente los publicados en Supabase. `.env.example` es una plantilla, no una configuración que Vite cargue automáticamente: para desarrollo usar `.env.local` y reiniciar `npm run dev` al cambiar variables. Si faltan esas variables se informa el problema en lugar de mostrar otro catálogo. Las vistas previas explícitas del admin siguen usando el borrador del navegador para revisar cambios no publicados.

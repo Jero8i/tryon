@@ -10,7 +10,7 @@ export async function loadCatalog() {
     catch { /* The caller shows an explicit error instead of a different product. */ }
     throw new Error('No se encontró el borrador local. Abrí la vista previa desde el mismo navegador del panel.');
   }
-  if(!cloudEnabled)return;
+  if(!cloudEnabled)throw new Error('Falta configurar Supabase. Completá VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY en .env.local y reiniciá npm run dev.');
   // A configured online catalog is authoritative: unpublished models must disappear.
   const published=await cloud.publicFrames();
   frames.splice(0,frames.length,...published.filter(isPublicFrame));

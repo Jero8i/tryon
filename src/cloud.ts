@@ -32,7 +32,7 @@ export const cloud={
     const results=await Promise.all(['tryon_frames','tryon_drafts'].map(async table=>response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/${table}?select=payload&order=updated_at.desc`,{headers:headers(auth)}))));
     return results.flatMap(rows=>rows.map(row=>row.payload)).filter(isDraft);
   },
-  async publicFrames() {if(!cloudEnabled)return [];const rows=await response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/tryon_frames?select=payload&status=eq.published`,{headers:headers(),signal:AbortSignal.timeout(8000)}));return rows.map(row=>row.payload.frame);},
+  async publicFrames() {if(!cloudEnabled)throw new Error('Falta configurar la conexión con Supabase.');const rows=await response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/tryon_frames?select=payload&status=eq.published`,{headers:headers(),signal:AbortSignal.timeout(8000)}));return rows.map(row=>row.payload.frame);},
   async prepareFront(photo:string) {
     if(!cloudEnabled)throw new Error('La preparación con IA requiere activar Supabase y su función prepare-front. Consultá PREPARACION-IA.md.');
     const auth=await token();

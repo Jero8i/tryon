@@ -1,7 +1,7 @@
 import './style.css';
 import { lensTypes, createLensMask, glassLayer } from './lenses';
 import { projectedSize, estimatePd, AutoPd, frameRatio } from './fit';
-import { drawTemple, headYaw, nearTemple, unprojectWidth, type Quad } from './temples';
+import { drawTemple, headYaw, nearTemple, unprojectWidth, photoTempleHeight, type Quad } from './temples';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { frames, type Frame } from './catalog';
 import {loadCatalog} from './catalog-loader';
@@ -22,7 +22,7 @@ document.body.classList.toggle('embedded',embedded);
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header><a class="brand" href="./">mirada<span>®</span></a><span class="header-note">Una nueva forma de encontrar tus anteojos</span><span class="edition">ESTUDIO ÓPTICO / 01</span></header>
 <main><div class="intro"><div><p class="eyebrow">TU PRÓXIMA MIRADA</p><h1>Encontrá tu forma<br>de ver el mundo.</h1></div><p>Probá una nueva perspectiva.<br>Elegí una montura y mirá cómo te queda,<br>desde donde estés.</p></div>
-<section class="workspace" aria-label="Probador virtual"><div class="viewer"><div class="view-top"><span class="pill">◉ PROBADOR VIRTUAL</span><span id="live">VISTA PREVIA</span></div><div class="stage"><video playsinline muted></video><canvas></canvas><div id="placeholder"><div class="face-outline"><span>+</span></div><h2>Tu nueva mirada empieza acá.</h2><p>Activá la cámara y encontrá tu próximo favorito.</p><button id="start" class="primary">Activar cámara <span>↗</span></button><small>La cámara se activa solo con tu permiso.</small></div></div><div class="view-bottom"><span id="status" role="status" aria-live="polite">Buscá un lugar con buena luz y mirá de frente.</span><button id="stop" hidden>Apagar cámara</button></div></div>
+<section class="workspace" aria-label="Probador virtual"><div class="viewer"><div class="view-top"><span class="pill">◉ PROBADOR VIRTUAL</span><span id="live">VISTA PREVIA</span></div><div class="stage"><div id="tryon-loading" role="status" aria-live="polite" hidden><span class="loading-spinner" aria-hidden="true"></span><span id="loading-label"></span></div><video playsinline muted></video><canvas></canvas><div id="placeholder"><div class="face-outline"><span>+</span></div><h2>Tu nueva mirada empieza acá.</h2><p>Activá la cámara y encontrá tu próximo favorito.</p><button id="start" class="primary">Activar cámara <span>↗</span></button><small>La cámara se activa solo con tu permiso.</small></div></div><div class="view-bottom"><span id="status" role="status" aria-live="polite">Buscá un lugar con buena luz y mirá de frente.</span><button id="stop" hidden>Apagar cámara</button></div></div>
 <aside><div class="section-title"><h2>La colección</h2><span>01 — ${String(frames.length).padStart(2, '0')}</span></div><p class="muted">Un estilo para cada versión de vos.</p><div id="catalog"></div><div class="details"><p class="eyebrow">TU SELECCIÓN</p><div class="product-title"><h3 id="name"></h3><span id="width"></span></div><p id="description"></p><p id="dimensions"></p><span class="sample">Montura de demostración · ajuste aproximado</span></div><div class="lens-picker"><label for="lens-type">Tipo de cristal</label><select id="lens-type" aria-describedby="lens-help"></select><p id="lens-help" role="status">Efecto visual de transparencia y color.</p></div><div class="calibration"><p id="fit-mode" role="status">Activá la cámara para estimar tu distancia pupilar.</p><p>Escala automática según las medidas de cada montura. La DP se estima a partir de los iris; no equivale a una medición óptica.</p></div></aside></section>
 <div class="footnotes"><p><span>01</span> Elegí tu montura</p><p><span>02</span> Activá tu cámara</p><p><span>03</span> Descubrí cómo te queda</p><button id="capture" disabled>↓ Guardar mi look</button></div><div class="privacy"><span>◇ Tu imagen se queda con vos. El video se procesa en tu navegador.</span><span>Frente 2D + patillas con perspectiva</span></div></main><footer><a class="brand" href="./">mirada<span>®</span></a><span>Otra forma de verte.</span><span>PROBADOR VIRTUAL — MVP 0.1</span></footer>`;
 
@@ -39,6 +39,7 @@ let stream: MediaStream | undefined;
 let animation = 0, generation = 0, lastTime = -1;
 let image: HTMLImageElement | undefined;
 let templeImage: HTMLImageElement | undefined;
+let photographedTempleHeight: number | undefined;
 let lensMaskCanvas: HTMLCanvasElement | null = null;
 let glass: HTMLCanvasElement | undefined;
 let anchorY = 0.42;
@@ -47,6 +48,12 @@ let lastFaceTime = 0;
 let imageGeneration = 0;
 let pose: { x: number; y: number; width: number; height: number; angle: number; yaw: number } | undefined;
 const status = (message: string) => { $('#status').textContent = message; };
+function loading(message?:string) {
+  const indicator=$('#tryon-loading');
+  indicator.hidden=!message;
+  $('#loading-label').textContent=message || '';
+  $('.stage').setAttribute('aria-busy',String(!!message));
+}
 
 
 
@@ -76,7 +83,7 @@ async function select(frame: Frame) {
   const token = ++imageGeneration;
   selectedFrame = frame;
   crop = undefined;
-  templeImage = undefined; lensMaskCanvas=null; glass=undefined;
+  templeImage = undefined; photographedTempleHeight=undefined; lensMaskCanvas=null; glass=undefined;
   lensSelect.disabled=true;
   pose = undefined;
   anchorY = frame.anchorY ?? 0.42;
@@ -99,6 +106,7 @@ async function select(frame: Frame) {
     button.setAttribute('aria-pressed', String(selected));
   });
   image = undefined;
+  if(stream)loading('Cargando la montura…');
   const next = new Image(); next.crossOrigin='anonymous'; next.src = frame.image;
   try {
     await next.decode();
@@ -113,10 +121,21 @@ async function select(frame: Frame) {
       updateGlass();
     }
   }
-  catch { status('No pudimos cargar la montura. Elegí otra imagen.'); }
+  catch { if(token===imageGeneration){loading();status('No pudimos cargar la montura. Elegí otra imagen.');} }
   if (frame.sideImage && frame.templeTexture) {
     const side = new Image(); side.crossOrigin='anonymous'; side.src = frame.sideImage;
-    try { await side.decode(); if (token === imageGeneration) templeImage = side; }
+    try {
+      await side.decode();
+      if (token === imageGeneration) {
+        templeImage = side;
+        const bounds=visibleBounds(side);
+        // A fully opaque upload includes background: do not use it as a ruler.
+        if(frame.templeTexture.quad && bounds.height<side.naturalHeight && frame.dimensions?.heightMm) {
+          const quad=frame.templeTexture.quad.map(p=>({x:p.x*side.naturalWidth,y:p.y*side.naturalHeight})) as Quad;
+          photographedTempleHeight=photoTempleHeight(quad,bounds.height,frame.dimensions.heightMm/frame.dimensions.widthMm);
+        }
+      }
+    }
     catch { if (token === imageGeneration) status('La vista frontal está disponible; no pudimos cargar las patillas.'); }
   }
 }
@@ -130,6 +149,7 @@ for (const frame of frames) {
 void select(frames.find(frame => frame.id === parameters.get('frame')) || frames[0]);
 
 function stop() {
+  loading();
   generation++; cancelAnimationFrame(animation);
   stream?.getTracks().forEach(track => track.stop()); stream = undefined;
   video.srcObject = null; ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -142,6 +162,7 @@ function stop() {
 start.onclick = async () => {
   const token = ++generation;
   start.disabled = true; start.textContent = 'Preparando probador…';
+  loading('Preparando el detector facial…');
   try {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Necesitás HTTPS o localhost y un navegador con acceso a cámara.');
     status('Descargando el detector facial. La primera carga puede tardar unos segundos.');
@@ -150,11 +171,13 @@ start.onclick = async () => {
       detector = await FaceLandmarker.createFromOptions(vision, {baseOptions: {modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'}, runningMode:'VIDEO', numFaces:1});
     }
     if (token !== generation) return;
+    loading('Esperando permiso de cámara…');
     const acquired = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:960}},audio:false});
     if (token !== generation) { acquired.getTracks().forEach(track => track.stop()); return; }
     stream = acquired; video.srcObject = stream; await video.play();
     if (token !== generation) return;
     $('.viewer').classList.add('active'); $('#stop').hidden = false; $('#live').textContent = '● EN VIVO';
+    loading('Buscando tu rostro…');
     loop();
   } catch (error) {
     stop();
@@ -182,6 +205,7 @@ function loop() {
         const irisDistance = irisLeft && irisRight ? Math.hypot((irisRight.x-irisLeft.x)*canvas.width,(irisRight.y-irisLeft.y)*canvas.height) : 0;
         if (knownPd === null || !Number.isFinite(irisDistance) || irisDistance<1) {
           capture.disabled=true; pose=undefined;
+          loading(image ? 'Ajustando el lente… Mirá de frente y quedate quieto un momento.' : 'Cargando la montura…');
           status('Mirá a la cámara con buena luz y mantené el rostro quieto un momento.');
           animation=requestAnimationFrame(loop);return;
         }
@@ -191,7 +215,7 @@ function loop() {
           ? projectedSize(irisDistance,knownPd,selectedFrame.dimensions.widthMm,selectedFrame.dimensions.heightMm ?? selectedFrame.dimensions.widthMm*ratio) : null;
         // The observed eye span shortens with yaw. Recover the frontal scale once,
         // then project the frame width; frame height must not shrink with the turn.
-        if (!physical) {capture.disabled=true;animation=requestAnimationFrame(loop);return;}
+        if (!physical) {loading('Ajustando el lente…');capture.disabled=true;animation=requestAnimationFrame(loop);return;}
         const width = unprojectWidth(physical.width,yaw);
         const target = {x:bridge.x*canvas.width,y:bridge.y*canvas.height,width,height:width*ratio,angle:Math.atan2(dy,dx),yaw};
         if (!pose) pose = target;
@@ -206,9 +230,12 @@ function loop() {
             const texture=selectedFrame.templeTexture;
             const side=nearTemple(pose.yaw);
             const ear=points[side === -1 ? 234 : 454];
-            const ex=ear.x*canvas.width-pose.x, ey=ear.y*canvas.height-pose.y-shiftY;
+            // Side contour supplies occlusion; upper contour supplies the arm's height.
+            // Blend toward the cheek slightly: MediaPipe does not track the ear itself.
+            const upperSide=points[side === -1 ? 127 : 356];
+            const ex=ear.x*canvas.width-pose.x, ey=(upperSide.y*.8+ear.y*.2)*canvas.height-pose.y-shiftY;
             drawTemple(ctx,templeImage,{
-              width,height,anchorY,yaw:pose.yaw,templeLengthRatio:selectedFrame.dimensions.templeMm/selectedFrame.dimensions.widthMm,hingeHeightFraction:selectedFrame.templeHingeY,
+              width,height,anchorY,yaw:pose.yaw,templeLengthRatio:selectedFrame.dimensions.templeMm/selectedFrame.dimensions.widthMm,hingeHeightFraction:selectedFrame.templeHingeY,templeHeightRatio:selectedFrame.dimensions.templeHeightMm ? selectedFrame.dimensions.templeHeightMm/selectedFrame.dimensions.widthMm : photographedTempleHeight,
               source:{x:texture.x*templeImage.naturalWidth,y:texture.y*templeImage.naturalHeight,width:texture.width*templeImage.naturalWidth,height:texture.height*templeImage.naturalHeight},
               photoQuad:texture.quad?.map(point=>({x:point.x*templeImage!.naturalWidth,y:point.y*templeImage!.naturalHeight})) as Quad | undefined,
               ear:{x:ex*Math.cos(pose.angle)+ey*Math.sin(pose.angle),y:-ex*Math.sin(pose.angle)+ey*Math.cos(pose.angle)}
@@ -220,10 +247,12 @@ function loop() {
           if (crop) ctx.drawImage(image,crop.x,crop.y,crop.width,crop.height,-width/2,-height*anchorY,width,height);
           else ctx.drawImage(image,-width/2,-height*anchorY,width,height);
           ctx.restore();
+          loading();
         }
         status(Math.abs(pose.yaw) > .8 ? 'Giro pronunciado: volvé un poco de frente para mejorar el ajuste.' : 'Medidas de montura aplicadas · DP estimada automáticamente. Girá suavemente para ver las patillas.');
       } else {
         pose = undefined; autoPd.add(null);
+        loading('Buscando tu rostro… Ubicate de frente y con buena luz.');
         if (performance.now()-lastFaceTime>800) autoPd.reset();
         $('#fit-mode').textContent='Buscando rostro · estimación automática de DP';
         status('Ubicá tu rostro en el centro y buscá buena iluminación.');

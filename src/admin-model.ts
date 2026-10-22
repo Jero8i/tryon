@@ -11,6 +11,7 @@ export function validateFrame(frame:Frame):string[] {
   if(d?.heightMm!==undefined && (!Number.isFinite(d.heightMm)||d.heightMm<15||d.heightMm>100)) errors.push('El alto total debe estar entre 15 y 100 mm.');
   for(const [value,min,max] of [[d?.lensWidthMm,10,100],[d?.lensHeightMm,10,100],[d?.bridgeMm,5,40]])if(value!==undefined && (!Number.isFinite(value)||value<min!||value>max!))errors.push('Revisá las medidas opcionales de cristales y puente.');
   if(frame.templeHingeY!==undefined && (!Number.isFinite(frame.templeHingeY)||frame.templeHingeY<0||frame.templeHingeY>1))errors.push('La bisagra debe estar dentro de la montura.');
+  if(d?.templeHeightMm!==undefined && (!Number.isFinite(d.templeHeightMm)||d.templeHeightMm<1||d.templeHeightMm>40)) errors.push('El alto de patilla debe estar entre 1 y 40 mm.');
   if(!frame.image) errors.push('Cargá una foto frontal.');
   if(frame.anchorY!==undefined && (!Number.isFinite(frame.anchorY)||frame.anchorY<0||frame.anchorY>1)) errors.push('Marcá el apoyo del puente dentro de la foto.');
   return errors;
