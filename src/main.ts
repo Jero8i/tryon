@@ -4,8 +4,18 @@ import { projectedSize, estimatePd, AutoPd, frameRatio } from './fit';
 import { drawTemple, headYaw, nearTemple, unprojectWidth, type Quad } from './temples';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { frames, type Frame } from './catalog';
+import {loadCatalog} from './catalog-loader';
+import {escapeHtml as e} from './admin-model';
+
+try {await loadCatalog();if(!frames.length)throw new Error('Todavía no hay modelos publicados.');}
+catch(error) {document.body.textContent=error instanceof Error?error.message:'No se pudo cargar el catálogo. Volvé a intentar.';throw error;}
 
 const parameters=new URLSearchParams(location.search);
+const requestedFrameId=parameters.get('frame');
+if(requestedFrameId && !frames.some(frame=>frame.id===requestedFrameId)) {
+  document.body.textContent='Este modelo no está publicado o el ID no existe. Consultá en la tienda.';
+  throw new Error('Modelo no disponible.');
+}
 const embedded=parameters.get('embed')==='1';
 document.body.classList.toggle('embedded',embedded);
 
@@ -89,7 +99,7 @@ async function select(frame: Frame) {
     button.setAttribute('aria-pressed', String(selected));
   });
   image = undefined;
-  const next = new Image(); next.src = frame.image;
+  const next = new Image(); next.crossOrigin='anonymous'; next.src = frame.image;
   try {
     await next.decode();
     if (token === imageGeneration) {
@@ -105,7 +115,7 @@ async function select(frame: Frame) {
   }
   catch { status('No pudimos cargar la montura. Elegí otra imagen.'); }
   if (frame.sideImage && frame.templeTexture) {
-    const side = new Image(); side.src = frame.sideImage;
+    const side = new Image(); side.crossOrigin='anonymous'; side.src = frame.sideImage;
     try { await side.decode(); if (token === imageGeneration) templeImage = side; }
     catch { if (token === imageGeneration) status('La vista frontal está disponible; no pudimos cargar las patillas.'); }
   }
@@ -113,7 +123,7 @@ async function select(frame: Frame) {
 for (const frame of frames) {
   const button = document.createElement('button');
   button.className = 'frame'; button.dataset.id = frame.id;
-  button.innerHTML = `<img src="${frame.image}" alt=""><span><strong>${frame.name}</strong><small>${frame.shape} · ${frame.color}</small></span><i>↗</i>`;
+  button.innerHTML = `<img src="${e(frame.image)}" alt=""><span><strong>${e(frame.name)}</strong><small>${e(frame.shape)} · ${e(frame.color)}</small></span><i>↗</i>`;
   button.onclick = () => void select(frame);
   $('#catalog').append(button);
 }

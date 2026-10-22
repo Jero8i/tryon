@@ -13,7 +13,7 @@ El probador independiente vive en `tryon.html`. El modal lo carga en un iframe c
 ></iframe>
 ```
 
-Reemplazar `parentOrigin` por el origen HTTPS real de la tienda (sin ruta). La página de ejemplo usa el origen del catálogo automáticamente. El `frame` es un ID del catálogo alojado en el probador; no se aceptan URLs de imágenes o medidas arbitrarias desde la tienda.
+Reemplazar `parentOrigin` por el origen HTTPS real de la tienda (sin ruta). La página de ejemplo usa el origen del catálogo automáticamente. El `frame` es un ID del catálogo alojado en el probador (administrable en `admin.html` cuando se active el almacenamiento online); no se aceptan URLs de imágenes o medidas arbitrarias desde la tienda.
 
 | Parámetro | Valores |
 | --- | --- |
@@ -22,7 +22,7 @@ Reemplazar `parentOrigin` por el origen HTTPS real de la tienda (sin ruta). La p
 | `embed` | `1` oculta cabecera y selector de monturas para mostrar el producto elegido |
 | `parentOrigin` | Origen de la tienda, usado para validar mensajes de cierre |
 
-Un ID de modelo o cristal desconocido usa la primera opción válida. La persona puede cambiar el cristal dentro del probador. La cámara solo se solicita después de pulsar Activar cámara.
+Un ID de modelo desconocido o retirado muestra que no está disponible; un ID de cristal desconocido usa el primer preset válido. La persona puede cambiar el cristal dentro del probador. La cámara solo se solicita después de pulsar Activar cámara.
 
 ## Cierre y permisos
 

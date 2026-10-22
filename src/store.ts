@@ -2,6 +2,11 @@ import './store.css';
 import {frames} from './catalog';
 import {lensTypes} from './lenses';
 import {tryonUrl} from './integration';
+import {loadCatalog} from './catalog-loader';
+import {escapeHtml as e} from './admin-model';
+
+try {await loadCatalog();}
+catch(error) {document.body.textContent=error instanceof Error?error.message:'No se pudo cargar el catálogo. Volvé a intentar.';throw error;}
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML=`
 <header><a href="./" class="brand">mirada<sup>®</sup></a><nav aria-label="Principal"><a href="#collection">La colección</a><a href="#how">Cómo probarlos</a></nav><span>ESTUDIO ÓPTICO / 01</span></header>
@@ -47,7 +52,7 @@ function open(frameId:string,lensId:string,button:HTMLButtonElement) {
 
 for(const frame of frames) {
   const card=document.createElement('article');card.className='product';
-  card.innerHTML=`<div class="product-photo"><span>PROBALO ONLINE ↗</span><img src="${frame.image}" alt="Montura ${frame.name}, ${frame.color}" loading="lazy"></div><div class="product-info"><div><h3>${frame.name}</h3><p>${frame.shape} · ${frame.color}</p></div><span class="measurement">${frame.width}</span></div><p class="product-measures"></p><label for="lens-${frame.id}">Tipo de cristal</label><select id="lens-${frame.id}"></select><button type="button" class="try-button">Probar anteojos <span>↗</span></button>`;
+  card.innerHTML=`<div class="product-photo"><span>PROBALO ONLINE ↗</span><img src="${e(frame.image)}" alt="Montura ${e(frame.name)}, ${e(frame.color)}" loading="lazy"></div><div class="product-info"><div><h3>${e(frame.name)}</h3><p>${e(frame.shape)} · ${e(frame.color)}</p></div><span class="measurement">${e(frame.width)}</span></div><p class="product-measures"></p><label for="lens-${frame.id}">Tipo de cristal</label><select id="lens-${frame.id}"></select><button type="button" class="try-button">Probar anteojos <span>↗</span></button>`;
   const dimensions=frame.dimensions!;
   card.querySelector('.product-measures')!.textContent=[frame.material,dimensions.heightMm?`Alto ${dimensions.heightMm} mm`:dimensions.lensHeightMm?`Alto de cristal ${dimensions.lensHeightMm} mm`:'',`Patillas ${dimensions.templeMm} mm`].filter(Boolean).join(' · ');
   const select=card.querySelector('select')!;

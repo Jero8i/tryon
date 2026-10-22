@@ -65,3 +65,7 @@ Referencia: https://vite.dev/guide/static-deploy.html#github-pages
 ## Catálogo y modal
 
 La raíz abre el catálogo de demostración. Cada producto pasa `frame` y `lens` al modal que carga `tryon.html?embed=1`. El probador independiente también está disponible en `tryon.html`. Los enlaces antiguos `/?frame=...` abren el producto correspondiente en el modal. Para integrar el iframe en la tienda real, ver `INTEGRACION.md`. Las 17 pruebas y la compilación verifican cálculos, máscaras y parámetros de URL; la interacción de cámara dentro del modal requiere validación manual en navegador.
+
+## Panel de carga del catálogo
+
+Abrir `admin.html`. Permite cargar nombre, ID de tienda, fotos, medidas, preparar PNG transparentes, marcar puente/patillas y probar un borrador con cámara. Incluye guardado local, exportación/importación y una conexión preparada de Supabase para autenticación y catálogo compartido. Sin configurar el backend solo guarda borradores en ese navegador; no publica para los clientes. Ver `ADMINISTRACION.md` para activar la publicación online una sola vez y luego cargar modelos sin editar código. El build y el workflow incluyen la tercera página y las dos variables públicas de conexión.

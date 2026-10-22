@@ -1,0 +1,4 @@
+# The function validates the user's access token through Supabase Auth and
+# checks catalog_editors itself, including projects with modern signing keys.
+[functions.prepare-front]
+verify_jwt = false
