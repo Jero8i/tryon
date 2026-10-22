@@ -1,39 +1,13 @@
-# Integración de demostración
+# Integración en la tienda
 
-La página principal (`index.html`, `src/store.ts`) simula una tienda con tres productos. Cada tarjeta permite elegir un cristal y abrir el probador en un modal. No implementa compra ni modifica la tienda real.
+La raíz y admin.html son el panel privado: requieren cuenta autorizada antes de cargar los modelos. Los clientes acceden a tryon.html?frame=ID desde el botón de un producto, sin login. El probador carga solo ese modelo publicado, sin catálogo navegable.
 
-El probador independiente vive en `tryon.html`. El modal lo carga en un iframe con `allow="camera"`:
+Después de ingresar, cada tarjeta habilitada ofrece Probar modelo y Código para la tienda. Copiá el bloque y cargá el script una sola vez en la plantilla de la tienda. Ver [código de integración](INTEGRACION-BOTON.md).
 
-```html
-<iframe
-  title="Probador virtual de Verdant"
-  src="https://jero8i.github.io/tryon/tryon.html?frame=verdant&lens=clear&embed=1&parentOrigin=https%3A%2F%2Fmitienda.com"
-  allow="camera"
-  style="width:100%;height:80vh;border:0"
-></iframe>
-```
+Parámetros: frame (ID obligatorio), lens (preset visual), embed=1 (modal) y parentOrigin (origen de la tienda). El script tryon-embed.js agrega los dos últimos automáticamente. El iframe permite cámara y se elimina al cerrar; los mensajes validan origen y ventana emisora.
 
-Reemplazar `parentOrigin` por el origen HTTPS real de la tienda (sin ruta). La página de ejemplo usa el origen del catálogo automáticamente. El `frame` es un ID del catálogo alojado en el probador (administrable en `admin.html` cuando se active el almacenamiento online); no se aceptan URLs de imágenes o medidas arbitrarias desde la tienda.
+Los borradores se prueban desde el editor con sesión autorizada y almacenamiento del mismo navegador. Habilitar en la tienda publica la versión revisada; guardar un borrador no reemplaza la publicación.
 
-| Parámetro | Valores |
-| --- | --- |
-| `frame` | `verdant`, `nika-brown`, `bless-carey-black` |
-| `lens` | `clear`, `blue`, `smoke`, `brown`, `green`, `none` |
-| `embed` | `1` oculta cabecera y selector de monturas para mostrar el producto elegido |
-| `parentOrigin` | Origen de la tienda, usado para validar mensajes de cierre |
+La autenticación restringe el panel, y Supabase aplica permisos a borradores y escrituras. Los modelos publicados y las fotos de producto permanecen accesibles para el probador sin login.
 
-Un ID de modelo desconocido o retirado muestra que no está disponible; un ID de cristal desconocido usa el primer preset válido. La persona puede cambiar el cristal dentro del probador. La cámara solo se solicita después de pulsar Activar cámara.
-
-## Cierre y permisos
-
-El botón Cerrar, Escape y clic fuera del diálogo cierran el modal. El catálogo envía `tryon:stop` al origen exacto del iframe y elimina el iframe para liberar la cámara y el detector. Si Escape ocurre dentro del probador, este envía `tryon:close` a `parentOrigin`; el catálogo valida origen y ventana emisora. El foco vuelve al botón del producto.
-
-Para integrarlo en otra tienda, copiar el patrón de `src/store.ts`: crear el iframe al abrir y eliminarlo al cerrar. No basta con ocultarlo mediante CSS.
-
-Ambos sitios deben usar HTTPS. `allow="camera"` no puede superar una restricción del encabezado Permissions-Policy de la tienda; si este existe, debe permitir el origen `https://jero8i.github.io`. Documentación: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe#allow
-
-## Publicación y verificación
-
-Subir el proyecto actualizado completo, incluidos `tryon.html`, `src/store.ts`, `src/store.css`, `src/integration.ts` y `vite.config.ts`. El workflow existente genera las dos páginas dentro de `dist`. Mantener Pages configurado con GitHub Actions.
-
-Verificación manual pendiente: abrir cada modelo y cristal, activar cámara, cerrar desde botón/Escape/fondo, confirmar que se apaga el indicador de cámara, reabrir otro modelo, comprobar desplazamiento en móvil y captura de imagen. Probar la integración entre dominios cuando se conozca la plataforma y URL de la tienda real.
+Pendiente validar en navegador: login, restauración y cierre de sesión, edición, publicación y cámara dentro del modal de la tienda real.

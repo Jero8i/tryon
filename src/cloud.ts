@@ -19,6 +19,12 @@ async function token() {
 export const cloud={
   signedIn:()=>!!session,
   email:()=>session?.user.email || '',
+  async verifyEditor() {
+    if(!cloudEnabled || !session)throw new Error('Ingresá con una cuenta autorizada.');
+    const auth=await token();
+    const rows=await response<{user_id:string}[]>(await fetch(`${base}/rest/v1/catalog_editors?select=user_id&user_id=eq.${session!.user.id}`,{headers:headers(auth)}));
+    if(!rows.length)throw new Error('Tu cuenta no tiene permiso para administrar el catálogo.');
+  },
   async login(email:string,password:string) {
     if(!cloudEnabled) throw new Error('Todavía falta configurar el almacenamiento online.');
     const data=await response<Session & {expires_in:number}>(await fetch(`${base}/auth/v1/token?grant_type=password`,{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({email,password})}));
@@ -32,7 +38,7 @@ export const cloud={
     const results=await Promise.all(['tryon_frames','tryon_drafts'].map(async table=>response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/${table}?select=payload&order=updated_at.desc`,{headers:headers(auth)}))));
     return results.flatMap(rows=>rows.map(row=>row.payload)).filter(isDraft);
   },
-  async publicFrames() {if(!cloudEnabled)throw new Error('Falta configurar la conexión con Supabase.');const rows=await response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/tryon_frames?select=payload&status=eq.published`,{headers:headers(),signal:AbortSignal.timeout(8000)}));return rows.map(row=>row.payload.frame);},
+  async publicFrames(id:string) {if(!cloudEnabled)throw new Error('Falta configurar la conexión con Supabase.');const rows=await response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/tryon_frames?select=payload&status=eq.published&id=eq.${encodeURIComponent(id)}`,{headers:headers(),signal:AbortSignal.timeout(8000)}));return rows.map(row=>row.payload.frame);},
   async prepareFront(photo:string) {
     if(!cloudEnabled)throw new Error('La preparación con IA requiere activar Supabase y su función prepare-front. Consultá PREPARACION-IA.md.');
     const auth=await token();

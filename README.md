@@ -1,6 +1,6 @@
 # Mirada · Probador virtual
 
-TypeScript + Vite + MediaPipe Face Landmarker + Canvas. El catálogo público se obtiene únicamente de los modelos publicados en Supabase. Los ejemplos Alma, Oliva y Aire ya no se ofrecen. Los SVG históricos se conservan en disco.
+Panel privado de administración para configurar el probador de La Fille aux Lunettes. TypeScript + Vite + Supabase + MediaPipe Face Landmarker + Canvas. La página principal requiere login y permiso de editor antes de mostrar modelos.
 
 ## Ejecutar y verificar
 
@@ -17,7 +17,7 @@ El build queda en `dist/`. La cámara requiere HTTPS o localhost; una IP de red 
 
 ## Escala automática
 
-Se usan las medidas de cada producto en `src/catalog.ts`, sin controles manuales de tamaño/altura ni carga de monturas sin dimensiones. La DP se estima automáticamente al mirar de frente, con ojos abiertos y buena luz. Se necesitan 24 lecturas consecutivas estables; se rechazan iris demasiado pequeños, asimetría marcada y giros mayores a aproximadamente 10 grados. No se dibuja ni se permite capturar la montura hasta obtener la estimación. Se conserva durante giros y se reinicia al apagar la cámara o perder el rostro más de 800 ms.
+Se usan las medidas de cada producto guardadas en Supabase, sin controles manuales de tamaño/altura ni carga de monturas sin dimensiones. La DP se estima automáticamente al mirar de frente, con ojos abiertos y buena luz. Se necesitan 24 lecturas consecutivas estables; se rechazan iris demasiado pequeños, asimetría marcada y giros mayores a aproximadamente 10 grados. No se dibuja ni se permite capturar la montura hasta obtener la estimación. Se conserva durante giros y se reinicia al apagar la cámara o perder el rostro más de 800 ms.
 
 La fórmula aproxima DP = separación de centros de iris en píxeles / diámetro de iris en píxeles × 11,7 mm, con una pequeña corrección por giro. Ese diámetro es una referencia poblacional, NO una medida del iris de la persona. Fuente: [MediaPipe Iris](https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/iris.md). El intervalo 40–80 mm es un filtro de plausibilidad del MVP, no una garantía de exactitud ni cobertura de todas las personas. La estabilidad temporal no certifica precisión.
 
@@ -31,7 +31,7 @@ El frente es una textura plana que se comprime con el giro horizontal. Las patil
 
 ## Integración
 
-Selección directa: `/?frame=verdant`, `/?frame=nika-brown`, `/?frame=bless-carey-black`. Desde una tienda se puede enlazar a la URL HTTPS. Para iframe se requiere `allow="camera"` y una Permissions Policy del anfitrión que autorice ese origen. Integración específica pendiente de definir la plataforma.
+El panel privado está en `/` y `admin.html`. Los clientes abren únicamente el producto seleccionado desde `tryon.html?frame=ID`, sin login. El código del botón se copia desde una tarjeta del panel. Ver `INTEGRACION.md` e `INTEGRACION-BOTON.md`.
 
 ## Privacidad
 
@@ -64,12 +64,12 @@ Referencia: https://vite.dev/guide/static-deploy.html#github-pages
 
 ## Catálogo y modal
 
-La raíz abre el catálogo de demostración. Cada producto pasa `frame` y `lens` al modal que carga `tryon.html?embed=1`. El probador independiente también está disponible en `tryon.html`. Los enlaces antiguos `/?frame=...` abren el producto correspondiente en el modal. Para integrar el iframe en la tienda real, ver `INTEGRACION.md`. Las 17 pruebas y la compilación verifican cálculos, máscaras y parámetros de URL; la interacción de cámara dentro del modal requiere validación manual en navegador.
+La raíz abre el login de administración. Tras verificar cuenta y permiso de editor, muestra los modelos configurados con acciones de edición, prueba y copia del código para la tienda. Nuevo modelo abre el formulario. `admin.html` conserva el mismo acceso. El probador para clientes requiere un ID publicado y no muestra un catálogo navegable.
 
 ## Panel de carga del catálogo
 
-Abrir `admin.html`. Permite cargar nombre, ID de tienda, fotos, medidas, preparar PNG transparentes, marcar puente/patillas y probar un borrador con cámara. Incluye guardado local, exportación/importación y una conexión preparada de Supabase para autenticación y catálogo compartido. Sin configurar el backend solo guarda borradores en ese navegador; no publica para los clientes. Ver `ADMINISTRACION.md` para activar la publicación online una sola vez y luego cargar modelos sin editar código. El build y el workflow incluyen la tercera página y las dos variables públicas de conexión.
+Abrir `/` o `admin.html` e ingresar con una cuenta autorizada. Permite cargar nombre, ID, fotos y medidas, marcar puente/patillas y probar borradores. Incluye copias locales y exportación/importación después del login. Supabase es obligatorio; no hay modo anónimo del panel. Ver `ADMINISTRACION.md`.
 
 ## Catálogo exclusivamente online
 
-No hay modelos estáticos de respaldo ni copias de demostración en el admin. Tienda y probador consultan únicamente los publicados en Supabase. `.env.example` es una plantilla, no una configuración que Vite cargue automáticamente: para desarrollo usar `.env.local` y reiniciar `npm run dev` al cambiar variables. Si faltan esas variables se informa el problema en lugar de mostrar otro catálogo. Las vistas previas explícitas del admin siguen usando el borrador del navegador para revisar cambios no publicados.
+El panel carga los modelos compartidos después de autenticar y combina las copias locales del navegador. El probador consulta únicamente el modelo publicado indicado por `frame`. `.env.example` es una plantilla: para desarrollo usar `.env.local` y reiniciar `npm run dev` al cambiar variables. La vista previa de borradores exige sesión de editor y usa IndexedDB en el mismo navegador.
