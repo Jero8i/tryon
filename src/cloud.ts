@@ -1,4 +1,5 @@
 import {isDraft,type Draft} from './admin-model';
+import {readResponse as response} from './http-response';
 const base=(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/,'');
 const key=import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 export const cloudEnabled=!!(base && key);
@@ -7,10 +8,6 @@ let session:Session|null=null;
 try {session=JSON.parse(sessionStorage.getItem('mirada-session') || 'null');}catch { /* Start signed out. */ }
 function saveSession(value:Session|null) {session=value;if(value)sessionStorage.setItem('mirada-session',JSON.stringify(value));else sessionStorage.removeItem('mirada-session');}
 function headers(token?:string) {return {apikey:key,...(token?{Authorization:`Bearer ${token}`}:{})};}
-async function response<T>(r:Response):Promise<T> {
-  if(!r.ok) {let message='';try {const data=await r.json();message=data.message || data.error_description || data.msg || data.error || '';}catch{}throw new Error(message || `Error del servicio (${r.status}).`);}
-  return r.status===204?undefined as T:r.json();
-}
 async function token() {
   if(!session) throw new Error('Iniciá sesión para guardar online.');
   if(session.expires_at<Date.now()/1000+60) {
@@ -68,7 +65,7 @@ export const cloud={
     if(copy.frame.image.startsWith('./'))copy.frame.image=new URL(copy.frame.image,location.href).href;
     if(copy.frame.sideImage?.startsWith('./'))copy.frame.sideImage=new URL(copy.frame.sideImage,location.href).href;
     const table=copy.status==='published'?'tryon_frames':'tryon_drafts';
-    await response(await fetch(`${base}/rest/v1/${table}?on_conflict=id`,{method:'POST',headers:{...headers(auth),'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:copy.id,status:copy.status,payload:copy,updated_at:copy.updatedAt})}));
+    await response<void>(await fetch(`${base}/rest/v1/${table}?on_conflict=id`,{method:'POST',headers:{...headers(auth),'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:copy.id,status:copy.status,payload:copy,updated_at:copy.updatedAt})}),{allowEmpty:true});
     return copy;
   },
   async unpublish(id:string) {
@@ -76,6 +73,6 @@ export const cloud={
     const rows=await response<{payload:Draft}[]>(await fetch(`${base}/rest/v1/tryon_frames?select=payload&id=eq.${encodeURIComponent(id)}`,{headers:headers(auth)}));
     if(!rows.length)return;
     const draft=rows[0].payload;draft.status='draft';draft.updatedAt=new Date().toISOString();
-    await response(await fetch(`${base}/rest/v1/tryon_frames?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{...headers(auth),'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:'draft',payload:draft,updated_at:draft.updatedAt})}));
+    await response<void>(await fetch(`${base}/rest/v1/tryon_frames?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{...headers(auth),'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:'draft',payload:draft,updated_at:draft.updatedAt})}),{allowEmpty:true});
   }
 };

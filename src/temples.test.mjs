@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {headYaw,unprojectWidth,nearTemple,project,drawTemple,stripSection} from './temples.ts';
+import {headYaw,unprojectWidth,nearTemple,project,drawTemple,stripSection,templeProfile} from './temples.ts';
 
 test('yaw uses unmirrored camera depth and selects only the nearer temple',()=>{
   const left={x:.3,y:.4,z:0}, right={x:.7,y:.4,z:0};
@@ -62,4 +62,20 @@ test('photo strip renderer enables smoothing and retains both head-turn directio
     assert.equal(ctx.imageSmoothingEnabled,true);
     assert.equal(ctx.imageSmoothingQuality,'high');
   }
+});
+
+test('solid photographic acetate is not faded into skin during head turns',()=>{
+  for(const yaw of [-.1,.1,-.5,.5]) {
+    const ctx=context();ctx.globalAlpha=.3;
+    drawTemple(ctx,{}, {...options,yaw});
+    assert.equal(ctx.globalAlpha,1);
+  }
+});
+test('temple taper follows the photo, including straight or widening profiles',()=>{
+  assert.deepEqual(templeProfile(),{start:1,end:1});
+  assert.deepEqual(templeProfile([{x:0,y:0},{x:100,y:0},{x:100,y:10},{x:0,y:10}]),{start:1,end:1});
+  const tapered=templeProfile([{x:0,y:-10},{x:100,y:-5},{x:100,y:5},{x:0,y:10}]);
+  assert.ok(Math.abs(tapered.start/tapered.end-2)<1e-9);
+  const widening=templeProfile([{x:0,y:-5},{x:100,y:-10},{x:100,y:10},{x:0,y:5}]);
+  assert.ok(widening.end>widening.start);
 });

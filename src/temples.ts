@@ -10,6 +10,20 @@ export function stripSection(quad: Quad, fraction: number): Quad {
   return [quad[0],lerp(quad[0],quad[1]),lerp(quad[3],quad[2]),quad[3]];
 }
 
+/** Relative widths measured perpendicular to the photographed temple's axis.
+ * Preserve its own taper instead of inventing one at render time. */
+export function templeProfile(quad?:Quad):{start:number;end:number} {
+  if(!quad)return {start:1,end:1};
+  const startCenter={x:(quad[0].x+quad[3].x)/2,y:(quad[0].y+quad[3].y)/2};
+  const endCenter={x:(quad[1].x+quad[2].x)/2,y:(quad[1].y+quad[2].y)/2};
+  const dx=endCenter.x-startCenter.x,dy=endCenter.y-startCenter.y,length=Math.hypot(dx,dy);
+  if(length<1e-6)return {start:1,end:1};
+  const thickness=(a:Point,b:Point)=>Math.abs((b.x-a.x)*(-dy/length)+(b.y-a.y)*(dx/length));
+  const first=thickness(quad[0],quad[3]),last=thickness(quad[1],quad[2]),mean=(first+last)/2;
+  if(mean<1e-6)return {start:1,end:1};
+  return {start:first/mean,end:last/mean};
+}
+
 /** Camera-space z grows away from the viewer. Input is unmirrored video. */
 export function headYaw(left: Landmark, right: Landmark, width: number, height: number) {
   const horizontal = Math.hypot((right.x-left.x)*width,(right.y-left.y)*height);
@@ -74,14 +88,16 @@ export function drawTemple(ctx: CanvasRenderingContext2D, img: HTMLImageElement,
   const endZ=length*visibleFraction;
   const end=project(hingeX,hingeY,endZ,yaw);
   // Straight acetate section. Hidden hook remains behind the head.
-  const thickness=height*.105;
-  const endThickness=thickness*(1-.35*visibleFraction);
+  const profile=templeProfile(options.photoQuad);
+  const thickness=height*.105*profile.start;
+  const endThickness=height*.105*(profile.start+(profile.end-profile.start)*visibleFraction);
   const endY=ear ? hingeY+Math.max(-height*.13,Math.min(height*.16,ear.y-hingeY)) : hingeY;
   ctx.save();
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  // Soft transition near frontal pose avoids a side-switch pop.
-  ctx.globalAlpha*=Math.min(1,(Math.abs(yaw)-.055)/.12);
+  // Keep the photograph's own alpha, without mixing solid acetate into skin.
+  // Visibility is controlled geometrically, rather than by recoloring via a fade.
+  ctx.globalAlpha=1;
   texturedQuad(ctx,img,{x:source.x,y:source.y,width:source.width*visibleFraction,height:source.height},[
     {x:hinge.x,y:hinge.y-thickness/2},{x:end.x,y:endY-endThickness/2},
     {x:end.x,y:endY+endThickness/2},{x:hinge.x,y:hinge.y+thickness/2}
