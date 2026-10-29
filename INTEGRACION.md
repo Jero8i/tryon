@@ -1,5 +1,11 @@
 # Integración en la tienda
 
+## Tiendanube con el diseño local
+
+El diseño en `../tiendanube-theme` incorpora un botón automático encima de Agregar al carrito. La ficha consulta el enlace guardado en **Enlace del producto en la tienda** del admin y muestra el botón cuando encuentra exactamente una montura habilitada. El build genera `storefront.js` en la raíz de Pages; la plantilla lo carga solo en páginas de producto.
+
+Publicar primero el probador actualizado en GitHub Pages y luego revisar/subir los tres archivos Twig indicados en `../tiendanube-theme/INTEGRACION-PROBADOR.md`. No se ejecutó ninguna sincronización FTP. El código de integración manual continúa disponible para otras tiendas.
+
 La raíz y admin.html son el panel privado: requieren cuenta autorizada antes de cargar los modelos. Los clientes acceden a tryon.html?frame=ID desde el botón de un producto, sin login. El probador carga solo ese modelo publicado, sin catálogo navegable.
 
 Después de ingresar, cada tarjeta habilitada ofrece Probar modelo y Código para la tienda. Copiá el bloque y cargá el script una sola vez en la plantilla de la tienda. Ver [código de integración](INTEGRACION-BOTON.md).

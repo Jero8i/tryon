@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Prueba local · Integración Tiendanube</title>
+  <link rel="icon" href="./favicon.webp" type="image/webp">
+  <style>
+    *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#f7f8f2;color:#243d33;font:15px/1.6 system-ui,sans-serif}main{max-width:760px;margin:40px auto;padding:24px}h1{line-height:1.2}section{padding:24px;background:white;border:1px solid #dbe2d1;border-radius:12px;margin-top:24px}label{display:block}input{width:100%;padding:12px;margin:8px 0 12px;border:1px solid #bac7b4;border-radius:6px;font:inherit}button,.try-button{display:inline-block;padding:12px 20px;background:#204d40;color:white;border:0;border-radius:6px;font:inherit;text-decoration:none;cursor:pointer}.hint{font-size:13px;color:#68785e}#lookup-status{font-size:14px}
+  </style>
+</head>
+<body>
+<main>
+  <p class="hint">PRUEBA LOCAL · NO MODIFICA TU TIENDA</p>
+  <h1>Probador en una ficha de producto</h1>
+  <p>Ingresá el enlace que guardaste en el admin del probador para un modelo habilitado.</p>
+  <form method="get">
+    <label for="product">Enlace del producto de Tiendanube</label>
+    <input id="product" name="product" type="url" placeholder="https://lafilleauxlunettes.com.ar/productos/…" required>
+    <button type="submit">Probar integración</button>
+  </form>
+  <section>
+    <h2>Ficha de producto de prueba</h2>
+    <p>Este bloque simula el lugar del botón en tu tienda. Usa el script real y los modelos habilitados en Supabase.</p>
+    <p id="lookup-status" role="status">Ingresá un enlace para comenzar.</p>
+    <div id="tryon-button" hidden>
+      <a class="try-button" href="#">Probalo online</a>
+      <p class="hint">Mirá cómo te queda usando tu cámara.</p>
+    </div>
+  </section>
+  <p class="hint">Esta prueba requiere conexión a internet. El diseño completo y sus estilos se revisan después en Tiendanube.</p>
+</main>
+<script type="module">
+  const value=new URLSearchParams(location.search).get('product');
+  if(value){
+    document.querySelector('#product').value=value;
+    const container=document.querySelector('#tryon-button');
+    container.dataset.tryonProductUrl=value;
+    const status=document.querySelector('#lookup-status');
+    status.textContent='Consultando el modelo habilitado…';
+    const observer=new MutationObserver(()=>{if(!container.hidden){status.textContent='Modelo encontrado. Abrí el probador para verificar la cámara y el lente.';observer.disconnect();}});
+    observer.observe(container,{attributes:true,attributeFilter:['hidden']});
+    const script=document.createElement('script');script.type='module';script.src='./storefront.js';
+    script.onerror=()=>{status.textContent='No se pudo cargar storefront.js. Ejecutá npm run build y npm run preview para usar esta prueba.';};
+    document.head.append(script);
+    setTimeout(()=>{if(container.hidden)status.textContent='No apareció el botón. Verificá que el enlace corresponda a un único modelo habilitado, y que Supabase esté disponible.';},12000);
+  }
+</script>
+</body>
+</html>

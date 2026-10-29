@@ -1,5 +1,6 @@
 import {isDraft,type Draft} from './admin-model';
 import {readResponse as response} from './http-response';
+import {normalizeProductUrl,productLookupQuery} from './storefront-model';
 const base=(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/,'');
 const key=import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 export const cloudEnabled=!!(base && key);
@@ -55,6 +56,16 @@ export const cloud={
   async save(draft:Draft) {
     const auth=await token();
     const copy:Draft=structuredClone(draft);
+    if(copy.productUrl) {
+      const normalized=normalizeProductUrl(copy.productUrl);
+      if(!normalized)throw new Error('El enlace del producto debe comenzar con https://.');
+      copy.productUrl=normalized;
+      if(copy.status==='published') {
+        const query=productLookupQuery(normalized);query.set('id','neq.'+copy.id);
+        const matches=await response<{id:string}[]>(await fetch(`${base}/rest/v1/tryon_frames?${query}`,{headers:headers(auth),signal:AbortSignal.timeout(8000)}));
+        if(matches.length)throw new Error('Ese enlace de la tienda ya está vinculado a otro modelo habilitado.');
+      }
+    }
     async function upload(value:string|undefined) {
       if(!value?.startsWith('data:')) return value;
       const blob=await (await fetch(value)).blob();
