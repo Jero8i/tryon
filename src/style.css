@@ -7,3 +7,24 @@
 #tryon-loading{position:absolute;z-index:3;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;width:max-content;max-width:90%;padding:12px 16px;border-radius:10px;background:#f7f8f2f0;color:#243d33;font-size:12px;box-shadow:0 3px 16px #142d2520;pointer-events:none}#tryon-loading[hidden]{display:none}.loading-spinner{width:20px;height:20px;flex-shrink:0;border:2px solid #c8d0bf;border-top-color:#204d40;border-radius:50%;animation:tryon-spin 1s linear infinite}@keyframes tryon-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.loading-spinner{animation:none}}
 
 .product-tryon .section-title,.product-tryon aside>.muted,.product-tryon #catalog{display:none}
+.lens-controls{display:none;position:absolute;z-index:4;left:14px;bottom:14px;color:#243d33;max-width:calc(100% - 28px)}
+.active .lens-controls{display:block}
+.lens-controls summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid #ffffffb0;border-radius:24px;background:#f7f8f2ed;backdrop-filter:blur(12px);box-shadow:0 2px 12px #142d251a;font-size:12px;font-weight:600;cursor:pointer;list-style:none}
+.lens-controls summary::-webkit-details-marker{display:none}
+.lens-controls summary:focus-visible{outline:3px solid #b38a46;outline-offset:3px}
+.lens-controls summary[aria-disabled=true]{opacity:.6;cursor:default}
+#lens-current{font-size:10px;font-weight:400;max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lens-chevron{margin-left:auto}.lens-controls[open] .lens-chevron{transform:rotate(180deg)}
+.lens-buttons{position:absolute;bottom:calc(100% + 8px);left:0;width:230px;max-width:calc(100vw - 60px);max-height:220px;overflow-y:auto;padding:6px;border:1px solid #dce3d4;border-radius:12px;background:#f7f8f2fa;box-shadow:0 6px 24px #142d2533;scrollbar-width:thin}
+.lens-button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:#40513a;font:inherit;font-size:12px;line-height:1.3;text-align:left;cursor:pointer}
+.lens-button:hover:not(:disabled){background:#e8eddf}
+.lens-button[aria-pressed=true]{border-color:#315847;background:#e5ecde;color:#204d40;box-shadow:inset 0 0 0 1px #315847}
+.lens-button:focus-visible{outline:3px solid #b38a46;outline-offset:1px}
+.lens-button:disabled{cursor:default;opacity:.45}
+.lens-swatch{width:23px;height:23px;border:1px solid #0002;border-radius:50%;background:var(--lens-color);box-shadow:inset 0 2px 5px #ffffff60}
+.lens-swatch--clear{background:linear-gradient(135deg,#ffffffd9,#d7e7ed80)}
+.lens-swatch--blue{background:linear-gradient(135deg,#f0f5ff,#a6bce8)}
+.lens-swatch--none{background:linear-gradient(135deg,transparent 46%,#98a58e 47%,#98a58e 53%,transparent 54%),#fff}
+.lens-help{font-size:10px;line-height:1.6;color:#65735f;margin-top:18px}
+.active #tryon-loading{bottom:72px}
+@media(max-width:680px){.lens-controls{left:10px;bottom:10px}}

@@ -23,8 +23,8 @@ document.body.classList.add('product-tryon');
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <header><a class="brand" href="./">mirada<span>®</span></a><span class="header-note">Una nueva forma de encontrar tus anteojos</span><span class="edition">ESTUDIO ÓPTICO / 01</span></header>
 <main><div class="intro"><div><p class="eyebrow">TU PRÓXIMA MIRADA</p><h1>Encontrá tu forma<br>de ver el mundo.</h1></div><p>Probá una nueva perspectiva.<br>Elegí una montura y mirá cómo te queda,<br>desde donde estés.</p></div>
-<section class="workspace" aria-label="Probador virtual"><div class="viewer"><div class="view-top"><span class="pill">◉ PROBADOR VIRTUAL</span><span id="live">VISTA PREVIA</span></div><div class="stage"><div id="tryon-loading" role="status" aria-live="polite" hidden><span class="loading-spinner" aria-hidden="true"></span><span id="loading-label"></span></div><video playsinline muted></video><canvas></canvas><div id="placeholder"><div class="face-outline"><span>+</span></div><h2>Tu nueva mirada empieza acá.</h2><p>Activá la cámara y encontrá tu próximo favorito.</p><button id="start" class="primary">Activar cámara <span>↗</span></button><small>La cámara se activa solo con tu permiso.</small></div></div><div class="view-bottom"><span id="status" role="status" aria-live="polite">Buscá un lugar con buena luz y mirá de frente.</span><button id="stop" hidden>Apagar cámara</button></div></div>
-<aside><div class="section-title"><h2>La colección</h2><span>01 — ${String(frames.length).padStart(2, '0')}</span></div><p class="muted">Un estilo para cada versión de vos.</p><div id="catalog"></div><div class="details"><p class="eyebrow">TU SELECCIÓN</p><div class="product-title"><h3 id="name"></h3><span id="width"></span></div><p id="description"></p><p id="dimensions"></p><span class="sample">Montura de demostración · ajuste aproximado</span></div><div class="lens-picker"><label for="lens-type">Tipo de cristal</label><select id="lens-type" aria-describedby="lens-help"></select><p id="lens-help" role="status">Efecto visual de transparencia y color.</p></div><div class="calibration"><p id="fit-mode" role="status">Activá la cámara para estimar tu distancia pupilar.</p><p>Escala automática según las medidas de cada montura. La DP se estima a partir de los iris; no equivale a una medición óptica.</p></div></aside></section>
+<section class="workspace" aria-label="Probador virtual"><div class="viewer"><div class="view-top"><span class="pill">◉ PROBADOR VIRTUAL</span><span id="live">VISTA PREVIA</span></div><div class="stage"><div id="tryon-loading" role="status" aria-live="polite" hidden><span class="loading-spinner" aria-hidden="true"></span><span id="loading-label"></span></div><video playsinline muted></video><canvas></canvas><details id="lens-menu" class="lens-controls"><summary id="lens-trigger" aria-describedby="lens-help" aria-disabled="true"><span aria-hidden="true">◉</span> Cristales <span id="lens-current"></span><span class="lens-chevron" aria-hidden="true">⌃</span></summary><div id="lens-buttons" class="lens-buttons" role="group" aria-label="Tipo de cristal"></div></details><div id="placeholder"><div class="face-outline"><span>+</span></div><h2>Tu nueva mirada empieza acá.</h2><p>Activá la cámara y encontrá tu próximo favorito.</p><button id="start" class="primary">Activar cámara <span>↗</span></button><small>La cámara se activa solo con tu permiso.</small></div></div><div class="view-bottom"><span id="status" role="status" aria-live="polite">Buscá un lugar con buena luz y mirá de frente.</span><button id="stop" hidden>Apagar cámara</button></div></div>
+<aside><div class="section-title"><h2>La colección</h2><span>01 — ${String(frames.length).padStart(2, '0')}</span></div><p class="muted">Un estilo para cada versión de vos.</p><div id="catalog"></div><div class="details"><p class="eyebrow">TU SELECCIÓN</p><div class="product-title"><h3 id="name"></h3><span id="width"></span></div><p id="description"></p><p id="dimensions"></p><span class="sample">Montura de demostración · ajuste aproximado</span></div><p id="lens-help" class="lens-help" role="status">Efecto visual de transparencia y color.</p><div class="calibration"><p id="fit-mode" role="status">Activá la cámara para estimar tu distancia pupilar.</p><p>Escala automática según las medidas de cada montura. La DP se estima a partir de los iris; no equivale a una medición óptica.</p></div></aside></section>
 <div class="footnotes"><p><span>01</span> Elegí tu montura</p><p><span>02</span> Activá tu cámara</p><p><span>03</span> Descubrí cómo te queda</p><button id="capture" disabled>↓ Guardar mi look</button></div><div class="privacy"><span>◇ Tu imagen se queda con vos. El video se procesa en tu navegador.</span><span>Frente 2D + patillas con perspectiva</span></div></main><footer><a class="brand" href="./">mirada<span>®</span></a><span>Probador de La Fille aux Lunettes.</span><span>PROBADOR DE LA TIENDA</span></footer>`;
 
 const $ = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
@@ -58,15 +58,36 @@ function loading(message?:string) {
 
 
 
-const lensSelect = $<HTMLSelectElement>('#lens-type');
-for (const type of lensTypes) { const option=document.createElement('option'); option.value=type.id; option.textContent=type.name; lensSelect.append(option); }
+const requestedLens=parameters.get('lens');
+let selectedLens=requestedLens && lensTypes.some(type=>type.id===requestedLens) ? requestedLens : 'clear';
+const lensButtons:HTMLButtonElement[]=[];
+const lensMenu=$<HTMLDetailsElement>('#lens-menu');
+const lensTrigger=$('#lens-trigger');
+$('#lens-current').textContent=lensTypes.find(type=>type.id===selectedLens)!.name;
+lensTrigger.onclick=event=>{if(lensTrigger.getAttribute('aria-disabled')==='true')event.preventDefault();};
+document.addEventListener('click',event=>{if(event.target instanceof Node && !lensMenu.contains(event.target))lensMenu.open=false;});
+lensMenu.addEventListener('keydown',event=>{if(event.key==='Escape' && lensMenu.open){event.preventDefault();event.stopPropagation();lensMenu.open=false;lensTrigger.focus();}});
+for(const type of lensTypes) {
+  const button=document.createElement('button');button.type='button';button.className='lens-button';
+  button.dataset.lens=type.id;button.title=type.name;button.disabled=true;
+  button.setAttribute('aria-pressed',String(type.id===selectedLens));
+  const swatch=document.createElement('span');swatch.className='lens-swatch lens-swatch--'+type.id;swatch.style.setProperty('--lens-color',type.color);swatch.setAttribute('aria-hidden','true');
+  const label=document.createElement('span');label.textContent=type.name;
+  button.append(swatch,label);
+  button.onclick=()=>{selectedLens=type.id;updateGlass();lensMenu.open=false;lensTrigger.focus();};
+  lensButtons.push(button);$('#lens-buttons').append(button);
+}
+function setLensAvailability(available:boolean) {
+  for(const button of lensButtons)button.disabled=!available;
+  lensTrigger.setAttribute('aria-disabled',String(!available));
+  if(!available)lensMenu.open=false;
+}
 function updateGlass() {
-  glass=lensMaskCanvas && crop ? glassLayer(lensMaskCanvas,crop,lensSelect.value) : undefined;
+  $('#lens-current').textContent=lensTypes.find(type=>type.id===selectedLens)!.name;
+  glass=lensMaskCanvas && crop ? glassLayer(lensMaskCanvas,crop,selectedLens) : undefined;
+  for(const button of lensButtons)button.setAttribute('aria-pressed',String(button.dataset.lens===selectedLens));
   $('#lens-help').textContent=lensMaskCanvas ? 'Simulación visual de color y reflejos. No representa graduación ni protección UV.' : 'No se pudieron delimitar ambas aberturas; se muestra la montura sin efecto.';
 }
-const requestedLens=parameters.get('lens');
-if(requestedLens && lensTypes.some(type=>type.id===requestedLens)) lensSelect.value=requestedLens;
-lensSelect.onchange=updateGlass;
 
 // Exclude transparent padding from the physical width/height without changing the PNG.
 function visibleBounds(img: HTMLImageElement) {
@@ -85,7 +106,7 @@ async function select(frame: Frame) {
   selectedFrame = frame;
   crop = undefined;
   templeImage = undefined; photographedTempleHeight=undefined; lensMaskCanvas=null; glass=undefined;
-  lensSelect.disabled=true;
+  setLensAvailability(false);
   pose = undefined;
   anchorY = frame.anchorY ?? 0.42;
   $('.sample').textContent = frame.templeTexture ? 'Patillas con perspectiva · geometría aproximada' : frame.demo === false ? 'Montura de producto · ajuste aproximado' : 'Montura de demostración · ajuste aproximado';
@@ -118,7 +139,7 @@ async function select(frame: Frame) {
       }
       image = next;
       if (crop) lensMaskCanvas=createLensMask(next,crop);
-      lensSelect.disabled=!lensMaskCanvas;
+      setLensAvailability(!!lensMaskCanvas);
       updateGlass();
     }
   }
@@ -150,6 +171,7 @@ for (const frame of frames) {
 void select(frames.find(frame => frame.id === parameters.get('frame')) || frames[0]);
 
 function stop() {
+  lensMenu.open=false;
   loading();
   generation++; cancelAnimationFrame(animation);
   stream?.getTracks().forEach(track => track.stop()); stream = undefined;
